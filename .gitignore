@@ -1,0 +1,10 @@
+archivos/
+.streamlit/
+negociaciones/
+output/
+apptk.exe
+conexionsql.py
+main.py
+PRUEBA.py
+prueba.xlsx
+__pycache__

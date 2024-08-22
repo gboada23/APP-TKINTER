@@ -1,0 +1,9 @@
+pandas
+numpy
+openpyxl
+sqlalchemy
+pymssql
+mysql-connector-python
+pillow
+reportlab
+tk
