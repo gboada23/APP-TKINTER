@@ -45,6 +45,7 @@ class App(tk.Tk):
         self.monto_faltante_actual = tk.DoubleVar(value=0.0)
         self.facturado_procesado = False
         self.total_enviado = tk.DoubleVar(value=0.0)
+        self.caso = tk.IntVar(value=1)  # 1 para Caso 1, 2 para Caso 2
 
         # Variables para la gestión de checkboxes
         self.checkbox_vars = []
@@ -99,20 +100,14 @@ class App(tk.Tk):
         self.pdf_generator = PDFGenerator(header_frame, self.sqlserver_manager, bg="#0C4B85")
         self.pdf_generator.pack(side=tk.RIGHT, padx=5)
 
+        # Botón para cambiar de caso
+        tk.Button(header_frame, text="Cambiar Caso", command=self.toggle_case, bg="#FF6347", fg="white", font=("Helvetica", 8, "bold")).pack(side=tk.RIGHT, padx=5)
+
         # Sección de Productos
-        product_frame = tk.Frame(scrollable_frame)
-        product_frame.pack(fill=tk.X, pady=2)
+        self.product_frame = tk.Frame(scrollable_frame)
+        self.product_frame.pack(fill=tk.X, pady=2)
 
-        self.create_product_frame(product_frame, "Producto Facturado",
-                                  self.familiainicial, self.nominicial, self.codinicial,
-                                  self.unidadinicial, self.solicitadoinicial, self.costodolarinicial,
-                                  self.preciodolarinicial, self.preciototalinicial, filter_by_comedor=True)
-
-        self.create_product_frame(product_frame, "Producto a Enviar",
-                                  self.familianeg, self.nomneg, self.codneg,
-                                  self.unidadneg, self.solicitadoneg, self.costodolarneg,
-                                  self.preciodolarneg, self.preciototalneg,
-                                  filter_by_comedor=False, is_negotiated=True)
+        self.create_product_frames()
 
         # Botón de agregar producto
         action_frame = tk.Frame(scrollable_frame, bg="#F0F0F0")
@@ -123,13 +118,13 @@ class App(tk.Tk):
 
         tk.Button(action_frame, text="Agregar Producto", command=self.add_product, bg="#0C4B85", fg="white", font=("Helvetica", 8)).pack(side=tk.RIGHT, padx=5)
 
-        # Tabla de productos agregados
-        columns = ("Codigo Zudalpro", "Producto a Enviar", "Unidad de medida", "Cantidad a Enviar", "Precio Total $", "Eliminar")
-        self.tree = ttk.Treeview(scrollable_frame, columns=columns, show="headings", height=3)
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, anchor=tk.CENTER)
+        # Crear tabla de productos agregados
+        self.tree = ttk.Treeview(scrollable_frame, show="headings", height=3)
         self.tree.pack(fill=tk.X, pady=2)
+
+        # Actualizar encabezados de la tabla según el caso
+        self.update_treeview_headers()
+
 
         # Botón de eliminar productos seleccionados
         self.delete_button = tk.Button(scrollable_frame, text="Eliminar Productos Seleccionados", command=self.delete_selected_products, bg="#FF6347", fg="white", font=("Helvetica", 8, "bold"))
@@ -146,6 +141,51 @@ class App(tk.Tk):
         # Necesario para que la imagen del logo se mantenga
         self.logo_image = logo_image
 
+    def update_treeview_headers(self):
+        # Eliminar todas las columnas actuales
+        self.tree["columns"] = ()
+
+        # Definir las columnas basadas en el caso seleccionado
+        if self.caso.get() == 1:
+            columns = ("Fecha","Codigo Zudalpro", "Producto a Enviar","Familia", "Unidad de medida", "Cantidad a Enviar", "Precio Total $")
+        else:
+            columns = ("Fecha","Codigo Zudalpro", "Producto a Facturar","Familia", "Unidad de medida", "Cantidad a Facturar", "Precio Total $")
+        # Actualizar las columnas en el Treeview
+        self.tree["columns"] = columns
+
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, anchor=tk.CENTER)
+
+    def create_product_frames(self):
+        for widget in self.product_frame.winfo_children():
+            widget.destroy()
+
+        if self.caso.get() == 1:
+            # Caso 1: Producto Facturado primero y luego Producto a Enviar
+            self.create_product_frame(self.product_frame, "Producto Facturado",
+                                      self.familiainicial, self.nominicial, self.codinicial,
+                                      self.unidadinicial, self.solicitadoinicial, self.costodolarinicial,
+                                      self.preciodolarinicial, self.preciototalinicial, filter_by_comedor=True)
+
+            self.create_product_frame(self.product_frame, "Producto a Enviar",
+                                      self.familianeg, self.nomneg, self.codneg,
+                                      self.unidadneg, self.solicitadoneg, self.costodolarneg,
+                                      self.preciodolarneg, self.preciototalneg,
+                                      filter_by_comedor=False, is_negotiated=True)
+        else:
+            # Caso 2: Producto a Enviar primero y luego Producto Facturado
+            self.create_product_frame(self.product_frame, "Producto a Enviar",
+                                      self.familianeg, self.nomneg, self.codneg,
+                                      self.unidadneg, self.solicitadoneg, self.costodolarneg,
+                                      self.preciodolarneg, self.preciototalneg,
+                                      filter_by_comedor=False, is_negotiated=True)
+
+            self.create_product_frame(self.product_frame, "Producto Facturado",
+                                      self.familiainicial, self.nominicial, self.codinicial,
+                                      self.unidadinicial, self.solicitadoinicial, self.costodolarinicial,
+                                      self.preciodolarinicial, self.preciototalinicial, filter_by_comedor=True)
+
     def create_product_frame(self, parent, title, familia_var, nombre_var, codigo_var, unidad_var, cantidad_var, costo_var, precio_var, precio_total_var, filter_by_comedor=False, is_negotiated=False):
         frame = tk.LabelFrame(parent, text=title, font=("Helvetica", 8, "bold"), padx=5, pady=5, bg="#F0F0F0")
         frame.pack(side=tk.LEFT, padx=4, pady=4, fill=tk.BOTH, expand=True)
@@ -156,7 +196,7 @@ class App(tk.Tk):
         tk.Label(frame, text="Descripción del Producto:", font=("Helvetica", 8, "bold"), bg="#F0F0F0").pack(pady=2, anchor="w")
         product_menu = ttk.Combobox(frame, textvariable=nombre_var, font=("Helvetica", 8), width=20)
         product_menu.pack(fill=tk.X, padx=2)
-        product_menu.bind("<<ComboboxSelected>>", lambda _: self.update_product_info(nombre_var, codigo_var, familia_var, unidad_var))
+        product_menu.bind("<<ComboboxSelected>>", lambda _: self.update_product_info(nombre_var, codigo_var, familia_var, unidad_var, precio_var))
 
         if filter_by_comedor:
             self.product_menu_inicial = product_menu
@@ -184,25 +224,43 @@ class App(tk.Tk):
         if is_negotiated:
             tk.Label(frame, textvariable=precio_var, font=("Helvetica", 8), bg="#F0F0F0").pack(pady=2, anchor="w")
         else:
-            precio_entry = tk.Entry(frame, textvariable=precio_var, font=("Helvetica", 8), width=10)
-            precio_entry.pack(padx=2)
-            precio_entry.bind("<KeyRelease>", lambda _: self.calculate_price_total(cantidad_var, precio_var, precio_total_var, is_negotiated))
+            # Cambiar Entry por Label para que no sea editable
+            tk.Label(frame, textvariable=precio_var, font=("Helvetica", 8), bg="#F0F0F0").pack(pady=2, anchor="w")
 
         tk.Label(frame, text="Precio Total $:", font=("Helvetica", 8, "bold"), bg="#F0F0F0").pack(pady=2, anchor="w")
         tk.Label(frame, textvariable=precio_total_var, font=("Helvetica", 8), bg="#F0F0F0").pack(pady=2, anchor="w")
 
-        if is_negotiated:
+        if is_negotiated and self.caso.get() == 1:
             tk.Label(frame, text="Cantidad Sugerida:", font=("Helvetica", 8, "bold"), bg="#F0F0F0").pack(pady=2, anchor="w")
             tk.Label(frame, textvariable=self.cantidad_sugerida, font=("Helvetica", 10, "bold"), bg="#F0F0F0", fg="#0C4B85").pack(pady=2, anchor="w")
+        elif not is_negotiated and self.caso.get() == 2:
+            tk.Label(frame, text="Cantidad Sugerida:", font=("Helvetica", 8, "bold"), bg="#F0F0F0").pack(pady=2, anchor="w")
+            tk.Label(frame, textvariable=self.cantidad_sugerida, font=("Helvetica", 10, "bold"), bg="#F0F0F0", fg="#0C4B85").pack(pady=2, anchor="w")
+
+    def toggle_case(self):
+        self.caso.set(2 if self.caso.get() == 1 else 1)
+        self.create_product_frames()
+        self.clear_values()
+        self.update_treeview_headers()  # Actualizar los encabezados de la tabla
+
+    def clear_values(self):
+        self.preciototalinicial.set(0.0)
+        self.monto_faltante.set(0.0)
+        self.monto_faltante_actual.set(0.0)
+        self.total_enviado.set(0.0)
+        self.facturado_procesado = False
 
     def calculate_price_total(self, cantidad_var, precio_var, precio_total_var, is_negotiated):
         try:
             cantidad = cantidad_var.get()
-            costo_unitario = self.costodolarneg.get()
-
-            if is_negotiated:
+            
+            # Para el caso 2, si es el producto facturado, mantenemos el precio de la tabla baremos
+            if self.caso.get() == 2 and not is_negotiated:
+                precio_unitario = precio_var.get()  # Mantenemos el precio traído desde la tabla baremos
+            elif is_negotiated:
+                costo_unitario = self.costodolarneg.get()
                 if costo_unitario:
-                    self.preciodolarneg.set(round(costo_unitario / 0.65, 2))
+                    self.preciodolarneg.set(round(costo_unitario / 0.65, 2))  # Mantener fijo como costo/0.65
 
                 precio_unitario = self.preciodolarneg.get()
             else:
@@ -213,10 +271,20 @@ class App(tk.Tk):
             if precio_unitario == '':
                 precio_unitario = 0
 
+            # Calcular el precio total
             total = round(float(cantidad) * float(precio_unitario), 2)
-            precio_total_var.set(total)
+            precio_total_var.set(round(total, 2))
 
-            if is_negotiated:
+            # Calcular cantidad sugerida en función del caso
+            if self.caso.get() == 1 and is_negotiated:
+                # Caso 1: Producto a Enviar
+                if self.monto_faltante_actual.get() > 0 and precio_unitario > 0:
+                    cantidad_sugerida = self.monto_faltante_actual.get() / precio_unitario
+                    self.cantidad_sugerida.set(int(cantidad_sugerida))
+                else:
+                    self.cantidad_sugerida.set(0)
+            elif self.caso.get() == 2 and not is_negotiated:
+                # Caso 2: Producto Facturado
                 if self.monto_faltante_actual.get() > 0 and precio_unitario > 0:
                     cantidad_sugerida = self.monto_faltante_actual.get() / precio_unitario
                     self.cantidad_sugerida.set(int(cantidad_sugerida))
@@ -231,7 +299,7 @@ class App(tk.Tk):
         filtered_unidades = self.baremos[self.baremos['comedor'] == comedor]['descripcion_zudalpro'].sort_values().unique().tolist()
         self.product_menu_inicial['values'] = filtered_unidades
 
-    def update_product_info(self, nombre_var, codigo_var, familia_var, unidad_var):
+    def update_product_info(self, nombre_var, codigo_var, familia_var, unidad_var, precio_var):
         nombre_producto = nombre_var.get()
         filtered_data = self.baremos[self.baremos['descripcion_zudalpro'] == nombre_producto]
         if not filtered_data.empty:
@@ -241,35 +309,83 @@ class App(tk.Tk):
             self.unidad_menu['values'] = presentaciones
             unidad_var.set(presentaciones[0].strip() if presentaciones else '')
 
-            # Si el producto facturado cambia, actualizar el monto faltante
-            if nombre_var == self.nominicial:
+            if self.caso.get() == 1 and nombre_var == self.nominicial:
+                # Caso 1: Producto Facturado
+                precio_var.set(filtered_data['precio'].values[0])
                 solicitadoinicial = self.solicitadoinicial.get()
-                preciodolarinicial = self.preciodolarinicial.get()
-                preciototaldolarinicial = solicitadoinicial * preciodolarinicial
+                preciodolarinicial = precio_var.get()
+                preciototaldolarinicial = round(solicitadoinicial * preciodolarinicial, 2)
 
-                # Actualizar el monto faltante y el precio total inicial
                 self.preciototalinicial.set(preciototaldolarinicial)
                 self.monto_faltante_actual.set(preciototaldolarinicial)
                 self.monto_faltante.set(round(self.monto_faltante_actual.get(), 2))
-                self.total_enviado.set(0.0)  # Reiniciar el total enviado
+                self.total_enviado.set(0.0)
                 self.facturado_procesado = True
-                messagebox.showinfo("Producto Facturado Cambiado", "Se ha actualizado el monto faltante según el nuevo producto facturado.")
+                messagebox.showinfo("Nuevo Producto Facturado", "Se ha actualizado el monto faltante.")
+
+            elif self.caso.get() == 2:
+                if nombre_var == self.nominicial:
+                    # Caso 2: Producto Facturado
+                    precio_var.set(filtered_data['precio'].values[0])
+                    solicitadoinicial = self.solicitadoinicial.get()
+                    preciodolarinicial = precio_var.get()
+                    preciototaldolarinicial = round(solicitadoinicial * preciodolarinicial, 2)
+
+                    # Actualizar solo el precio total del producto facturado sin cambiar el monto faltante
+                    self.preciototalinicial.set(preciototaldolarinicial)
+
+                    # Actualizar la cantidad sugerida
+                    if self.monto_faltante_actual.get() > 0 and preciodolarinicial > 0:
+                        cantidad_sugerida = self.monto_faltante_actual.get() / preciodolarinicial
+                        self.cantidad_sugerida.set(int(cantidad_sugerida))
+                    else:
+                        self.cantidad_sugerida.set(0)
+
+                elif nombre_var == self.nomneg:
+                    # Producto a enviar en el Caso 2
+                    self.preciodolarneg.set(round(self.costodolarneg.get() / 0.65, 2))
+                    solicitadoneg = self.solicitadoneg.get()
+                    preciodolarneg = self.preciodolarneg.get()
+                    preciototaldolarneg = round(solicitadoneg * preciodolarneg, 2)
+
+                    # Actualizar el monto faltante y el precio total del producto a enviar
+                    self.preciototalneg.set(preciototaldolarneg)
+                    self.monto_faltante_actual.set(preciototaldolarneg)
+                    self.monto_faltante.set(round(self.monto_faltante_actual.get(), 2))
+                    self.total_enviado.set(0.0)
+                    self.facturado_procesado = True
+                    messagebox.showinfo("Nuevo Producto a Enviar", "Se ha actualizado el monto faltante.")
 
     def add_product(self):
-        cantidad_enviada = self.solicitadoneg.get()
-        precio_unitario_enviado = self.preciodolarneg.get()
-        precio_total_enviado = cantidad_enviada * precio_unitario_enviado
+        if self.caso.get() == 1:
+            # Lógica para Caso 1: Producto a Enviar
+            cantidad_enviada = self.solicitadoneg.get()
+            precio_unitario_enviado = self.preciodolarneg.get()
+            precio_total_enviado = cantidad_enviada * precio_unitario_enviado
 
-        # Actualizar el total enviado con redondeo
-        self.total_enviado.set(round(self.total_enviado.get() + precio_total_enviado, 2))
+            # Actualizar el total enviado con redondeo
+            self.total_enviado.set(round(self.total_enviado.get() + precio_total_enviado, 2))
 
-        # Calcular y actualizar el monto faltante con redondeo
-        self.monto_faltante_actual.set(round(self.preciototalinicial.get() - self.total_enviado.get(), 2))
-        self.monto_faltante.set(self.monto_faltante_actual.get())
+            # Calcular y actualizar el monto faltante con redondeo
+            self.monto_faltante_actual.set(round(self.preciototalinicial.get() - self.total_enviado.get(), 2))
+            self.monto_faltante.set(self.monto_faltante_actual.get())
+
+        elif self.caso.get() == 2:
+            # Ajustar la lógica para Caso 2: Producto Facturado
+            cantidad_facturada = self.solicitadoinicial.get()
+            precio_unitario_facturado = self.preciodolarinicial.get()
+            precio_total_facturado = cantidad_facturada * precio_unitario_facturado
+
+            # Actualizar el total enviado con redondeo
+            self.total_enviado.set(round(self.total_enviado.get() + precio_total_facturado, 2))
+
+            # Calcular y actualizar el monto faltante con redondeo basado en el producto facturado
+            self.monto_faltante_actual.set(round(self.monto_faltante_actual.get() - precio_total_facturado, 2))
+            self.monto_faltante.set(self.monto_faltante_actual.get())
 
         # Si el monto faltante es menor o igual a 0, notificamos al usuario
         if self.monto_faltante_actual.get() <= 0:
-            messagebox.showinfo("Monto Cubierto", "El monto del producto facturado ha sido cubierto.")
+            messagebox.showinfo("Monto Cubierto", "El monto del producto ha sido cubierto.")
             self.monto_faltante_actual.set(0)
             self.monto_faltante.set(0)
 
@@ -292,7 +408,8 @@ class App(tk.Tk):
             'solicitadoneg': self.solicitadoneg.get(),
             'costodolarneg': self.costodolarneg.get(),
             'preciodolarneg': self.preciodolarneg.get(),
-            'precio_total_neg': precio_total_enviado
+            'precio_total_neg': round(self.preciodolarneg.get() * self.solicitadoneg.get(), 2) if self.caso.get() == 1 else None,
+            'precio_total_inicial': round(self.preciodolarinicial.get() * self.solicitadoinicial.get(), 2) if self.caso.get() == 2 else None
         }
 
         self.products.append(data)
@@ -300,18 +417,33 @@ class App(tk.Tk):
         self.calculate_price_total(self.solicitadoneg, self.preciodolarneg, self.preciototalneg, True)
 
     def update_table(self):
+        # Actualizar la tabla con la información correcta según el caso
         for i in self.tree.get_children():
             self.tree.delete(i)
 
         for product in self.products:
-            self.tree.insert("", tk.END, values=(
-                product['codneg'].strip(),
-                product['nomneg'].strip(),
-                product['undneg'].strip(),
-                product['solicitadoneg'],
-                product['precio_total_neg'],
-            ))
-
+            if self.caso.get() == 2:
+                # Mostrar información del producto facturado en el caso 2
+                self.tree.insert("", tk.END, values=(
+                    product['fechaneg'],
+                    product['codinicial'].strip(),
+                    product['nominicial'].strip(),
+                    product['familiainicial'].strip(),
+                    product['undinicial'].strip(),
+                    product['solicitadoinicial'],
+                    round(product['preciodolarinicial'] * product['solicitadoinicial'], 2),
+                ))
+            else:
+                # Mostrar información del producto a enviar en el caso 1
+                self.tree.insert("", tk.END, values=(
+                    product['fechaneg'],
+                    product['codneg'].strip(),
+                    product['nomneg'].strip(),
+                    product['familianeg'].strip(),
+                    product['undneg'].strip(),
+                    product['solicitadoneg'],
+                    round(product['preciodolarneg'] * product['solicitadoneg'], 2),
+                ))
 
     def delete_selected_products(self):
         selected_items = self.tree.selection()
@@ -322,10 +454,17 @@ class App(tk.Tk):
                 product = self.products[item_index]
 
                 # Restar el monto eliminado del total enviado con redondeo
-                self.total_enviado.set(round(self.total_enviado.get() - product['precio_total_neg'], 2))
+                if self.caso.get() == 1:
+                    self.total_enviado.set(round(self.total_enviado.get() - product['precio_total_neg'], 2))
+                elif self.caso.get() == 2:
+                    self.total_enviado.set(round(self.total_enviado.get() - product['precio_total_inicial'], 2))
 
                 # Actualizar el monto faltante con redondeo
-                self.monto_faltante_actual.set(round(self.preciototalinicial.get() - self.total_enviado.get(), 2))
+                if self.caso.get() == 1:
+                    self.monto_faltante_actual.set(round(self.preciototalinicial.get() - self.total_enviado.get(), 2))
+                else:
+                    self.monto_faltante_actual.set(round(self.monto_faltante_actual.get() + product['precio_total_inicial'], 2))
+
                 self.monto_faltante.set(self.monto_faltante_actual.get())
 
                 # Eliminar el producto de la lista
@@ -339,6 +478,7 @@ class App(tk.Tk):
 
     def submit_negociacion(self):
         try:
+            # Prepara los datos para la inserción
             for product in self.products:
                 product['codclie'] = product['codclie'].strip()
                 product['comedor'] = product['comedor'].strip()
@@ -354,21 +494,24 @@ class App(tk.Tk):
 
             df = pd.DataFrame(self.products)
 
-            df['preciototaldolarneg'] = df['solicitadoneg'] * df['preciodolarneg']
-
-            if 'precio_total_neg' in df.columns:
-                df = df.drop(columns=['precio_total_neg'])
-
+            # Realizar cálculos para ambos conjuntos de datos, independiente del caso
             df['costototaldolarinicial'] = df['solicitadoinicial'] * df['costodolarinicial']
             df['preciototaldolarinicial'] = df['solicitadoinicial'] * df['preciodolarinicial']
             df['rentabilidadinicial'] = ((df['preciodolarinicial'] - df['costodolarinicial']) / df['preciodolarinicial']) * 100
             df['utilidadinicial'] = df['preciototaldolarinicial'] - df['costototaldolarinicial']
+            
+            df['preciototaldolarneg'] = df['solicitadoneg'] * df['preciodolarneg']
             df['costototaldolarneg'] = df['solicitadoneg'] * df['costodolarneg']
             df['rentabilidadneg'] = ((df['preciodolarneg'] - df['costodolarneg']) / df['preciodolarneg']) * 100
             df['utilidadneg'] = df['preciototaldolarneg'] - df['costototaldolarneg']
-        # Intentar agregar los datos a la base de datos y capturar el resultado
+
+            # Eliminar columnas temporales que no están en la base de datos
+            columns_to_remove = ['precio_total_neg', 'precio_total_inicial']
+            df = df.drop(columns=[col for col in columns_to_remove if col in df.columns])
+
+            # Insertar los datos en la base de datos
             result_message = self.sqlserver_manager.add_data('NEGOCIACIONDAT', df)
-            
+
             if "exitosamente" in result_message:
                 # Si se agregó con éxito, limpiar la interfaz y mostrar el mensaje
                 messagebox.showinfo("Éxito", result_message)
@@ -386,8 +529,7 @@ class App(tk.Tk):
         except Exception as e:
             messagebox.showerror("Error inesperado", f"Ocurrió un error inesperado: {str(e)}")
 
+
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-
-

@@ -19,7 +19,7 @@ class PDFGenerator(tk.Frame):
 
     def create_widgets(self):
         tk.Label(self, text="Numero de control:", bg="#0C4B85",fg="white",font=("Helvetica", 10,"bold")).grid(row=0, column=0, pady=5, sticky="e")
-        self.codclie_entry = tk.Entry(self, font=("Helvetica", 10), width=10)
+        self.codclie_entry = tk.Entry(self, font=("Helvetica", 10), width=12)
         self.codclie_entry.grid(row=0, column=1, pady=5, padx=5)
         
         self.generate_button = tk.Button(self, text="Generar PDF", command=self.generate_pdf, bg="#0C4B85", fg="white", font=("Helvetica", 10))
@@ -30,6 +30,7 @@ class PDFGenerator(tk.Frame):
 
         if codclie:
             data = self.sqlserver_manager.filtro_codclie(codclie)
+            data = data.drop('cantreal',axis=1)
             if data is not None and not data.empty:
                 comedor = data['comedor'].iloc[0] if 'comedor' in data.columns else 'N/A'
                 fechaneg = data['fechaneg'].iloc[0] if 'fechaneg' in data.columns else 'N/A'
@@ -42,9 +43,9 @@ class PDFGenerator(tk.Frame):
                     self.create_pdf(data, filename, codclie, fechaneg, npedido, comedor, familiainicial, familianeg)
                     messagebox.showinfo("Éxito", f"PDF generado exitosamente: {filename}")
             else:
-                messagebox.showwarning("Advertencia", "No se encontraron datos para el Numero de control proporcionado.")
+                messagebox.showerror("Error", "No se encontraron datos para el Numero de control proporcionado.")
         else:
-            messagebox.showwarning("Advertencia", "Por favor, introduce un código de cliente.")
+            messagebox.showwarning("Numero de control en blanco", "Por favor, introduce un código de cliente.")
 
     def create_pdf(self, data, filename, codclie, fechaneg, npedido, comedor, familiainicial, familianeg):
         c = canvas.Canvas(filename, pagesize=landscape(letter))
@@ -103,7 +104,7 @@ class PDFGenerator(tk.Frame):
             c.setFont("Helvetica-Bold", 12)
             c.drawCentredString(box_x + box_width / 2, box_y + box_height / 2 - 3, "Producto Enviado")
             table2.wrapOn(c, c._pagesize[0] - 2 * inch, c._pagesize[1] - 4 * inch)
-            table2.drawOn(c, 1 * inch, 5 * inch)
+            table2.drawOn(c, 1 * inch, 5.5 * inch)
         def draw_summary_box():
             # Dimensiones y posición del cuadro
             box_x = 550
@@ -124,7 +125,7 @@ class PDFGenerator(tk.Frame):
                 c.drawString(box_x + 10, box_y + box_height - 40, f"Rentabilidad {round(rentabilidad_general * 100, 2)}%")
             else:
                 c.setFillColor(colors.red)
-                c.drawString(box_x + 10, box_y + box_height - 10, f"NEGOCIACIÓN EN CONTRA POR {round(resultado, 2)}$")
+                c.drawString(box_x + 10, box_y + box_height - 10, f"Negociacion en contra por {round(resultado, 2)}$")
 
         def draw_responsable_boxes():
     # Posiciones y dimensiones del primer cuadro
@@ -186,6 +187,7 @@ class PDFGenerator(tk.Frame):
         
         # Obtener productos únicos en 'data1' basado en la columna de descripción del producto
         data1 = data1.drop_duplicates(subset=['nominicial'])
+        data2 = data2.drop_duplicates(subset=['nomneg'])
 
         # Renombrar columnas como se hacía antes
         renombre = {
