@@ -9,7 +9,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Gestión de Negociaciones")
-        self.geometry("1400x950")
+        self.geometry("1300x720")
         self.iconbitmap("logo.ico")
         # Inicializar conexiones
         self.mysql = MYSQL()
@@ -76,7 +76,7 @@ class App(tk.Tk):
         scrollbar.pack(side="right", fill="y")
 
         # Encabezado
-        tk.Label(scrollable_frame, text="Gestión de Negociaciones", font=("Helvetica", 14, "bold"), bg="#0C4B85", fg="white").pack(fill=tk.X)
+        tk.Label(scrollable_frame, text="Gestión de Negociaciones", font=("Helvetica", 12, "bold"), bg="#0C4B85", fg="white").pack(fill=tk.X)
         header_frame = tk.Frame(scrollable_frame, bg="#0C4B85")
         header_frame.pack(fill=tk.X, pady=5)
 
@@ -89,15 +89,15 @@ class App(tk.Tk):
         control_pdf_frame.pack(side=tk.LEFT, padx=10)
 
         # Número de Control
-        tk.Label(control_pdf_frame, text="Nro de Control:", font=("Helvetica", 8, "bold"), bg="#0C4B85", fg="white").grid(row=0, column=0, padx=5)
-        tk.Entry(control_pdf_frame, textvariable=self.control_number, font=("Helvetica", 8), width=12).grid(row=0, column=1, padx=5)
+        tk.Label(control_pdf_frame, text="Nro Control:", font=("Helvetica", 8, "bold"), bg="#0C4B85", fg="white").grid(row=0, column=0, padx=5)
+        tk.Entry(control_pdf_frame, textvariable=self.control_number, font=("Helvetica", 8), width=8).grid(row=0, column=1, padx=5)
 
         # Botones para generar PDFs
-        self.simplified_pdf_button = tk.Button(control_pdf_frame, text="Generar PDF Almacen", command=lambda: self.generate_pdf_simplified(), bg="#0C4B85", fg="white", font=("Helvetica", 8))
+        self.simplified_pdf_button = tk.Button(control_pdf_frame, text="PDF Almacen", command=lambda: self.generate_pdf_simplified(), bg="#0C4B85", fg="white", font=("Helvetica", 8))
         self.simplified_pdf_button.grid(row=0, column=2, padx=5)
         self.create_tooltip(self.simplified_pdf_button, "Genera el pdf que va al almacen")
 
-        generate_pdf_button = tk.Button(control_pdf_frame, text="Generar PDF admin", command=lambda: self.generate_pdf(), bg="#0C4B85", fg="white", font=("Helvetica", 8))
+        generate_pdf_button = tk.Button(control_pdf_frame, text="PDF admin", command=lambda: self.generate_pdf(), bg="#0C4B85", fg="white", font=("Helvetica", 8))
         generate_pdf_button.grid(row=0, column=3, padx=5)
         self.create_tooltip(generate_pdf_button, "Genera el pdf  administrativo con costos, precios y rentabilidad")
         # Número de Pedido y Comedor en otro Frame
@@ -105,12 +105,12 @@ class App(tk.Tk):
         control_frame.pack(side=tk.LEFT, padx=10)
 
         # Número de Pedido
-        tk.Label(control_frame, text="Nro de Pedido:", font=("Helvetica", 8, "bold"), bg="#0C4B85", fg="white").grid(row=0, column=0, padx=5)
-        tk.Entry(control_frame, textvariable=self.npedido, font=("Helvetica", 8), width=12).grid(row=0, column=1, padx=5)
+        tk.Label(control_frame, text="Nro Pedido:", font=("Helvetica", 8, "bold"), bg="#0C4B85", fg="white").grid(row=0, column=0, padx=5)
+        tk.Entry(control_frame, textvariable=self.npedido, font=("Helvetica", 8), width=8).grid(row=0, column=1, padx=5)
 
         # Comedor
         tk.Label(control_frame, text="Comedor:", font=("Helvetica", 8, "bold"), bg="#0C4B85", fg="white").grid(row=0, column=2, padx=5)
-        comedor_menu = ttk.Combobox(control_frame, textvariable=self.comedor, font=("Helvetica", 8), values=self.comedores['comedor'].sort_values().tolist(), width=50)
+        comedor_menu = ttk.Combobox(control_frame, textvariable=self.comedor, font=("Helvetica", 8), values=self.comedores['comedor'].sort_values().tolist(), width=40)
         comedor_menu.grid(row=0, column=3, padx=5)
         comedor_menu.bind("<<ComboboxSelected>>", self.update_product_options)
 
@@ -197,22 +197,22 @@ class App(tk.Tk):
             self.tree_enviado.column(col, anchor=tk.CENTER)  # Usar 'w' para alinear a la izquierda
 
         # Ajustar el tamaño de las columnas específicas
-        """self.tree_facturado.column("Producto", width=150)
-        self.tree_enviado.column("Producto", width=150)
-        self.tree_facturado.column("Cantidad a Facturar", width=130)
-        self.tree_enviado.column("Cantidad a Enviar", width=130)
-        self.tree_facturado.column("Precio Total $", width=85)
-        self.tree_enviado.column("Precio Total $", width=85)"""
+        self.tree_facturado.column("Producto", width=120)
+        self.tree_enviado.column("Producto", width=120)
+        self.tree_facturado.column("Cantidad a Facturar", width=90)
+        self.tree_enviado.column("Cantidad a Enviar", width=90)
+        self.tree_facturado.column("Precio Total $", width=75)
+        self.tree_enviado.column("Precio Total $", width=75)
 
     def create_product_frames(self):
         for widget in self.product_frame.winfo_children():
             widget.destroy()
 
         left_frame = tk.Frame(self.product_frame)
-        left_frame.pack(side=tk.LEFT, padx=7, pady=10, expand=True, fill=tk.BOTH)
+        left_frame.pack(side=tk.LEFT, padx=4, pady=7, expand=True, fill=tk.BOTH)
 
         right_frame = tk.Frame(self.product_frame)
-        right_frame.pack(side=tk.LEFT, padx=7, pady=10, expand=True, fill=tk.BOTH)
+        right_frame.pack(side=tk.LEFT, padx=4, pady=7, expand=True, fill=tk.BOTH)
 
         if self.caso.get() == 1:
             self.create_product_frame(left_frame, "Producto Facturado", self.familiainicial, self.nominicial, self.codinicial,
@@ -280,8 +280,8 @@ class App(tk.Tk):
                 self.cantidad_sugerida.set(0)
 
     def create_product_frame(self, parent, title, familia_var, nombre_var, codigo_var, unidad_var, cantidad_var, costo_var, precio_var, precio_total_var, filter_by_comedor=False, is_negotiated=False):
-        frame = tk.LabelFrame(parent, text=title, font=("Helvetica", 8, "bold"), padx=5, pady=5, bg="#F0F0F0")
-        frame.pack(side=tk.LEFT, padx=4, pady=4, fill=tk.BOTH, expand=True)
+        frame = tk.LabelFrame(parent, text=title, font=("Helvetica", 8, "bold"), padx=2, pady=2, bg="#F0F0F0")
+        frame.pack(side=tk.LEFT, padx=2, pady=2, fill=tk.BOTH, expand=True)
 
         if self.caso.get() == 1:
             if title == "Producto Facturado":
@@ -300,7 +300,7 @@ class App(tk.Tk):
         tk.Label(frame, textvariable=familia_var, font=("Helvetica", 8), bg="#F0F0F0").pack(pady=2, anchor="w")
 
         tk.Label(frame, text="Descripción del Producto:", font=("Helvetica", 8, "bold"), bg="#F0F0F0").pack(pady=2, anchor="w")
-        product_menu = ttk.Combobox(frame, textvariable=nombre_var, font=("Helvetica", 8), width=20)
+        product_menu = ttk.Combobox(frame, textvariable=nombre_var, font=("Helvetica", 8), width=10)
         product_menu.pack(fill=tk.X, padx=2)
         product_menu.bind("<<ComboboxSelected>>", lambda _: self.update_product_info(nombre_var, codigo_var, familia_var, unidad_var, precio_var))
 
