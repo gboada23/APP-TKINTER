@@ -4,12 +4,13 @@ import pandas as pd
 from datetime import datetime
 from conexionsql import SQLSERVER, MYSQL
 from pdf import PDFGenerator  # Importar la clase PDFGenerator
+import webbrowser as navegador
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Gestión de Negociaciones")
-        self.geometry("1300x720")
+        self.geometry("1400x820")
         self.iconbitmap("logo.ico")
         # Inicializar conexiones
         self.mysql = MYSQL()
@@ -110,7 +111,7 @@ class App(tk.Tk):
 
         # Comedor
         tk.Label(control_frame, text="Comedor:", font=("Helvetica", 8, "bold"), bg="#0C4B85", fg="white").grid(row=0, column=2, padx=5)
-        comedor_menu = ttk.Combobox(control_frame, textvariable=self.comedor, font=("Helvetica", 8), values=self.comedores['comedor'].sort_values().tolist(), width=40)
+        comedor_menu = ttk.Combobox(control_frame, textvariable=self.comedor, font=("Helvetica", 8), values=self.comedores['comedor'].sort_values().tolist(), width=45)
         comedor_menu.grid(row=0, column=3, padx=5)
         comedor_menu.bind("<<ComboboxSelected>>", self.update_product_options)
 
@@ -132,7 +133,8 @@ class App(tk.Tk):
         # Monto Faltante a la izquierda
         tk.Label(control_row_frame, text="Monto Faltante $:", font=("Helvetica", 8, "bold"), bg="#F0F0F0").pack(side=tk.LEFT, padx=5)
         tk.Label(control_row_frame, textvariable=self.monto_faltante, font=("Helvetica", 10, "bold"), bg="#F0F0F0", fg="#0C4B85").pack(side=tk.LEFT)
-        tk.Label(control_row_frame, text="Una vez enviada la negociación ya no se puede editar", font=("Helvetica", 10), fg="black").pack(side=tk.LEFT, expand=True)
+        self.button_link = tk.Button(control_row_frame, text="Realizar alguna acción", command=lambda: self.openweb(), bg="#0C4B85", fg="white", font=("Helvetica", 8))
+        self.button_link.pack(side=tk.LEFT, expand=True)
         delete_button = tk.Button(control_row_frame, text="Eliminar Producto Seleccionado", command=self.delete_selected_products, bg="#FF6347", fg="white", font=("Helvetica", 8, "bold"))
         delete_button.pack(side=tk.RIGHT, padx=5)
 
@@ -147,6 +149,9 @@ class App(tk.Tk):
         # Necesario para que la imagen del logo se mantenga
         self.logo_image = logo_image
 
+    def openweb(self):
+        url = "192.168.100.5/negociaciones/index.html"
+        navegador.open(url)
     def generate_pdf(self):
         # Obtener el número de control del Entry
         codclie = self.control_number.get().strip()
@@ -395,13 +400,13 @@ class App(tk.Tk):
 
                 elif nombre_var == self.nominicial:
                     # Caso 1: Producto Facturado
-                    precio_var.set(filtered_data['precio'].values[0])
+                    precio_var.set(filtered_data[filtered_data['comedor'] == self.comedor.get()]['precio'].values[0])
                     self.calculate_suggested_quantity_case_1()
             
             elif self.caso.get() == 2:
                 if nombre_var == self.nominicial:
                     # Caso 2: Producto Facturado
-                    precio_var.set(filtered_data['precio'].values[0])
+                    precio_var.set(filtered_data[filtered_data['comedor'] == self.comedor.get()]['precio'].values[0])
                     self.calculate_suggested_quantity_case_2()
 
                 elif nombre_var == self.nomneg:
