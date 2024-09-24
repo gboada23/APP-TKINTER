@@ -220,6 +220,7 @@ class App(tk.Tk):
         right_frame.pack(side=tk.LEFT, padx=4, pady=7, expand=True, fill=tk.BOTH)
 
         if self.caso.get() == 1:
+            messagebox.showinfo("Presencia del Caso 1", "Este caso implica identificar los productos a facturar y realizar un análisis detallado para determinar cuáles serán enviados, asegurando siempre la maximización de la rentabilidad.")
             self.create_product_frame(left_frame, "Producto Facturado", self.familiainicial, self.nominicial, self.codinicial,
                                       self.unidadinicial, self.solicitadoinicial, self.costodolarinicial, self.preciodolarinicial,
                                       self.preciototalinicial, filter_by_comedor=True)
@@ -227,6 +228,7 @@ class App(tk.Tk):
                                       self.unidadneg, self.solicitadoneg, self.costodolarneg, self.preciodolarneg,
                                       self.preciototalneg, filter_by_comedor=False, is_negotiated=True)
         else:
+            messagebox.showinfo("Presencia del Caso 2", "Este caso implica contar con los productos a enviar y realizar un análisis exhaustivo para determinar cuáles serán facturados, garantizando una adecuada planificación.")
             self.create_product_frame(left_frame, "Producto a Enviar", self.familianeg, self.nomneg, self.codneg,
                                       self.unidadneg, self.solicitadoneg, self.costodolarneg, self.preciodolarneg,
                                       self.preciototalneg, filter_by_comedor=False, is_negotiated=True)
@@ -443,9 +445,15 @@ class App(tk.Tk):
             if not self.control_number.get():
                 messagebox.showwarning("Advertencia", "El Numero de control no puede quedar vacío.")
                 return
+            
             if self.costodolarinicial.get() == 0 or self.costodolarinicial.get() == '':
                 messagebox.showwarning("Advertencia", "El costo del Producto no puede quedar vacío o ser 0.")
                 return
+            
+            if not self.comedor.get():
+                messagebox.showwarning("Advertencia", "El Comedor debe estar seleccionado para continuar.")
+                return
+            
             data = {
                 'codclie': self.control_number.get().strip(),
                 'fechaneg': datetime.today().strftime('%Y-%m-%d'),
@@ -461,6 +469,7 @@ class App(tk.Tk):
                 'precio_total_inicial': round(self.preciodolarinicial.get() * self.solicitadoinicial.get(), 2)
             }
             self.products_facturados.append(data)
+            messagebox.showinfo("Exito", "Producto agregado existosamente")
             self.update_table_facturado()
             if self.caso.get() == 2:
                 total_facturado = sum(product['precio_total_inicial'] for product in self.products_facturados)
@@ -468,8 +477,9 @@ class App(tk.Tk):
                 self.monto_faltante.set(round(monto_faltante_actual, 2))
             else:
                 self.update_monto_faltante()   # Actualizar el monto faltante después de agregar el producto
-        except:
-            messagebox.showerror("Advertencia", "El costo del Producto no puede quedar vacío.")
+        
+        except Exception as e:
+            messagebox.showerror("Error", f"Ha ocurrido un error inesperado: {str(e)}")
 
     def add_product_enviado(self):
         try:
@@ -478,6 +488,9 @@ class App(tk.Tk):
                 return
             if self.costodolarneg.get() == 0 or self.costodolarneg.get() == '':
                 messagebox.showwarning("Advertencia", "El costo del Producto no puede quedar vacío o ser 0.")
+                return
+            if not self.comedor.get():
+                messagebox.showwarning("Advertencia", "El Comedor debe estar seleccionado para continuar.")
                 return
             data = {
                 'codclie': self.control_number.get().strip(),
@@ -494,6 +507,7 @@ class App(tk.Tk):
                 'precio_total_neg': round(self.preciodolarneg.get() * self.solicitadoneg.get(), 2)
             }
             self.products_enviados.append(data)
+            messagebox.showinfo("Exito", "Producto agregado existosamente")
             self.update_table_enviado()
 
         # Actualizar el monto faltante basado en la suma de productos enviados en Caso 2
@@ -616,6 +630,15 @@ class App(tk.Tk):
             print(f"Error al calcular el precio total: {e}")
 
     def delete_selected_products(self):
+    # Mostrar cuadro de confirmación antes de eliminar
+        confirm_delete = messagebox.askyesno("Confirmación", "¿Seguro que quieres eliminar este producto?")
+        
+        if not confirm_delete:
+            return  # Si el usuario selecciona "No", no se hace nada y se sale del método
+
+        # Bandera para verificar si se ha eliminado algún producto
+        product_deleted = False
+
         # Obtener el producto seleccionado en el Treeview de productos facturados
         selected_facturado = self.tree_facturado.selection()
         if selected_facturado:
@@ -623,6 +646,7 @@ class App(tk.Tk):
                 item_index = self.tree_facturado.index(item)
                 del self.products_facturados[item_index]
                 self.tree_facturado.delete(item)
+            product_deleted = True  # Marca que se eliminó un producto
 
         # Obtener el producto seleccionado en el Treeview de productos enviados
         selected_enviado = self.tree_enviado.selection()
@@ -631,11 +655,16 @@ class App(tk.Tk):
                 item_index = self.tree_enviado.index(item)
                 del self.products_enviados[item_index]
                 self.tree_enviado.delete(item)
+            product_deleted = True  # Marca que se eliminó un producto
 
         # Actualizar el monto faltante después de eliminar productos
         self.update_monto_faltante()
-    
-    def submit_negociacion(self):
+
+        # Si se eliminó al menos un producto, mostrar mensaje de éxito
+        if product_deleted:
+            messagebox.showinfo("Éxito", "Producto eliminado exitosamente")
+
+    def submit_negociacion(self): 
         try:
             for product in self.products_facturados + self.products_enviados:
                 product['codclie'] = product['codclie'].strip()
@@ -661,18 +690,19 @@ class App(tk.Tk):
             df_facturados = df_facturados.drop(columns=[col for col in columns_to_remove if col in df_facturados.columns])
             df_enviados = df_enviados.drop(columns=[col for col in columns_to_remove if col in df_enviados.columns])
 
-            # Intentar insertar datos en la tabla "Facturados"
-            result_message_facturados = self.sqlserver_manager.add_data('TablaFacturados', df_facturados)
-            
-            # Intentar insertar datos en la tabla "Enviados"
-            result_message_enviados = self.sqlserver_manager.add_data('TablaEnviados', df_enviados)
+            confirm_delete = messagebox.askyesno("Confirmación", "¿Seguro que quieres enviar esta negociacion?")
+        
+            if not confirm_delete:
+                return
+            # Llamar al método que agrega los datos a ambas tablas
+            result_message = self.sqlserver_manager.add_data_to_two_tables('TablaFacturados', df_facturados, 'TablaEnviados', df_enviados)
 
-            # Verificar mensajes de resultado
-            if "exitosamente" in result_message_facturados and "exitosamente" in result_message_enviados:
+            # Verificar el resultado
+            if "exitosamente" in result_message:
                 messagebox.showinfo("Información enviada", "Negociacion creada con éxito.")
                 self.clear_values()  # Limpiar todas las variables excepto el número de control
             else:
-                messagebox.showerror("Error", f"Error al crear la negociación verifica tener acceso al 'WIFI ZudalproCorp':\n\n tabla facturados {result_message_facturados}\n\n tabla Enviados: {result_message_enviados}")
+                messagebox.showerror("Error", f"Error al crear la negociación: {result_message}")
 
         except Exception as e:
             messagebox.showerror("Error inesperado", f"Ocurrió un error inesperado: {str(e)}")
