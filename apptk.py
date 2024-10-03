@@ -18,7 +18,7 @@ class App(tk.Tk):
         self.baremos = self.mysql.tabla_baremos()
         self.products_facturados = []
         self.products_enviados = []
-        self.comedores = pd.read_excel(r"archivos/comedores.xlsx")
+        #self.comedores = pd.read_excel(r"archivos/comedores.xlsx")
 
         # Variables de control
         self.control_number = tk.StringVar()
@@ -111,7 +111,7 @@ class App(tk.Tk):
 
         # Comedor
         tk.Label(control_frame, text="Comedor:", font=("Helvetica", 8, "bold"), bg="#0C4B85", fg="white").grid(row=0, column=2, padx=5)
-        comedor_menu = ttk.Combobox(control_frame, textvariable=self.comedor, font=("Helvetica", 8), values=self.comedores['comedor'].sort_values().tolist(), width=45)
+        comedor_menu = ttk.Combobox(control_frame, textvariable=self.comedor, font=("Helvetica", 8), values=self.baremos['comedor'].sort_values().unique().tolist(), width=50)
         comedor_menu.grid(row=0, column=3, padx=5)
         comedor_menu.bind("<<ComboboxSelected>>", self.update_product_options)
 
@@ -390,7 +390,7 @@ class App(tk.Tk):
             familia_var.set(filtered_data['familia'].values[0].strip())
             presentaciones = filtered_data['presentacion'].sort_values().unique().tolist()
             self.unidad_menu['values'] = presentaciones
-            unidad_var.set(presentaciones[0].strip() if presentaciones else '')
+            unidad_var.set(presentaciones[0] if presentaciones else '')
 
             if self.caso.get() == 1:
                 if nombre_var == self.nomneg:
@@ -402,12 +402,14 @@ class App(tk.Tk):
 
                 elif nombre_var == self.nominicial:
                     # Caso 1: Producto Facturado
+                    unidad_var.set(filtered_data[(filtered_data['comedor'] == self.comedor.get())]['presentacion'].values[0])
                     precio_var.set(filtered_data[filtered_data['comedor'] == self.comedor.get()]['precio'].values[0])
                     self.calculate_suggested_quantity_case_1()
             
             elif self.caso.get() == 2:
                 if nombre_var == self.nominicial:
                     # Caso 2: Producto Facturado
+                    unidad_var.set(filtered_data[(filtered_data['comedor'] == self.comedor.get())]['presentacion'].values[0])
                     precio_var.set(filtered_data[filtered_data['comedor'] == self.comedor.get()]['precio'].values[0])
                     self.calculate_suggested_quantity_case_2()
 
